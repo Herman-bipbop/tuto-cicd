@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Actions & CI/CD — Tutoriel</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --green-dim: #1a4520;
+    --blue: #58a6ff;
+    --blue-dim: #0d2a4a;
+    --yellow: #d29922;
+    --yellow-dim: #2d2208;
+    --red: #f85149;
+    --red-dim: #3b1212;
+    --purple: #bc8cff;
+    --purple-dim: #2a1a4a;
+    --accent: #3fb950;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* SCANLINES EFFECT */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+  }
+
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar { display: none; }
+
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0 14px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+    border-bottom-color: var(--green);
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 100px 4rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(63,185,80,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+    width: fit-content;
+  }
+
+  .hero-tag::before {
+    content: '▶';
+    font-size: 8px;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -2px;
+  }
+
+  h1 span {
+    color: var(--green);
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin-bottom: 3rem;
+    line-height: 1.8;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid;
+    transition: all 0.2s;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: #0d1117;
+    border-color: var(--green);
+    font-weight: 700;
+  }
+
+  .btn-primary:hover { background: #4ccc5d; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--muted); background: var(--bg2); }
+
+  /* TERMINAL BLOCK */
+  .terminal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+
+  .terminal-bar {
+    background: var(--bg3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #28c840; }
+
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+
+  .terminal-body {
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--text); }
+  .t-comment { color: var(--muted); }
+  .t-success { color: var(--green); }
+  .t-key { color: var(--blue); }
+  .t-val { color: var(--yellow); }
+  .t-str { color: var(--purple); }
+  .t-error { color: var(--red); }
+
+  /* SECTIONS */
+  section {
+    padding: 6rem 4rem;
+    position: relative;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 60px;
+    height: 1px;
+    background: var(--green);
+    opacity: 0.4;
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    letter-spacing: -1px;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+
+  .section-intro {
+    font-size: 1rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 3rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--green);
+  }
+
+  p { margin-bottom: 1rem; color: var(--text); }
+
+  /* CARDS GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: var(--muted); }
+
+  .card-icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; margin: 2rem 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th {
+    background: var(--bg3);
+    padding: 10px 16px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+
+  /* CALLOUT */
+  .callout {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    font-size: 14px;
+  }
+
+  .callout-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+  }
+
+  /* PIPELINE DIAGRAM */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+
+  .pipe-step {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .pipe-step.success { border-color: var(--green); }
+  .pipe-step.pending { border-color: var(--yellow); }
+  .pipe-step.fail { border-color: var(--red); }
+
+  .pipe-icon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    margin-bottom: 0.5rem;
+  }
+
+  .pipe-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .pipe-arrow {
+    color: var(--muted);
+    font-size: 20px;
+    padding: 0 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* STATUS */
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .status-row:last-child { border-bottom: none; }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* YAML HIGHLIGHT */
+  .yaml-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .yaml-header {
+    background: var(--bg3);
+    padding: 8px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .yaml-body {
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+
+  /* STEPS */
+  .steps { margin: 2rem 0; }
+
+  .step {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--green);
+    flex-shrink: 0;
+  }
+
+  .step-content { flex: 1; }
+
+  /* TRANSITION CALLOUT */
+  .transition-box {
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 4rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    position: fixed;
+    top: 56px; left: 0;
+    height: 2px;
+    background: var(--green);
+    z-index: 99;
+    transition: width 0.1s;
+    width: 0%;
+  }
+
+  /* SCROLL ANIMATION */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    section, .hero { padding: 4rem 1.5rem; }
+    nav { padding: 0 1rem; }
+    .pipeline { flex-direction: column; align-items: stretch; }
+    .pipe-arrow { transform: rotate(90deg); text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<nav>
+  <div class="nav-logo">~/github-actions</div>
+  <ul class="nav-links">
+    <li><a href="#intro">Intro</a></li>
+    <li><a href="#cicd">CI/CD</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#actions">GitHub Actions</a></li>
+    <li><a href="#yaml">YAML</a></li>
+    <li><a href="#premier">Premier pipeline</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="intro">
+  <div class="hero-tag">Tutoriel interactif — B2 Web & Multimédia</div>
+  <h1>GitHub Actions<br><span>&</span> CI/CD</h1>
+  <p class="hero-sub">Tu as déjà déployé à la main et cassé quelque chose ? Copier des fichiers en FTP, vérifier que rien n'a cassé, recommencer si t'as oublié un fichier... La CI/CD c'est la réponse à ce problème.</p>
+  <div class="hero-cta">
+    <a href="#cicd" class="btn btn-primary">▶ Commencer</a>
+    <a href="https://github.com/features/actions" class="btn btn-secondary" target="_blank">↗ GitHub Actions</a>
+  </div>
+
+  <div class="terminal" style="max-width: 640px; margin-top: 3rem;">
+    <div class="terminal-bar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">bash — workflow run</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">$</span> <span class="t-cmd">git push origin main</span></div>
+      <div><span class="t-comment"># GitHub Actions se déclenche automatiquement</span></div>
+      <div><span class="t-success">✓</span> <span class="t-cmd">Workflow triggered</span></div>
+      <div><span class="t-success">✓</span> <span class="t-cmd">Tests passed (12/12)</span></div>
+      <div><span class="t-success">✓</span> <span class="t-cmd">Deployed to production</span></div>
+      <div><span class="t-comment"># Tout ça sans intervention manuelle.</span></div>
+    </div>
+  </div>
+
+  <div class="callout" style="max-width: 640px;">
+    <div class="callout-title">Ce que tu vas apprendre</div>
+    Comprendre la CI/CD · Découvrir GitHub Actions · Lire et écrire un fichier YAML · Créer ton premier pipeline automatisé
+  </div>
+</section>
+
+<!-- SECTION 1 — CI/CD -->
+<section id="cicd">
+  <div class="section-label">Section 01</div>
+  <h2>C'est quoi<br>la CI/CD ?</h2>
+  <p class="section-intro">"Avant de toucher un outil, comprends pourquoi il existe."</p>
+
+  <div class="fade-in">
+    <h3>Le problème sans CI/CD</h3>
+    <p>Imagine une équipe de 5 développeurs qui travaillent sur le même projet. Chacun code de son côté, et le vendredi soir tout le monde pousse son code en même temps. Résultat : conflits, bugs, site cassé, soirée gâchée.</p>
+    <p>La CI/CD c'est ce qui évite ça.</p>
+  </div>
+
+  <div class="grid fade-in" style="margin-top: 2rem;">
+    <div class="card">
+      <div class="card-icon">CI</div>
+      <h3>Intégration Continue</h3>
+      <p style="color: var(--muted); font-size: 14px;">Chaque fois que tu pousses du code, des vérifications se déclenchent automatiquement — tests, analyse, compilation. L'objectif : détecter les erreurs avant qu'elles arrivent en production.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">CD</div>
+      <h3>Déploiement Continu</h3>
+      <p style="color: var(--muted); font-size: 14px;">Une fois le code vérifié, il est automatiquement envoyé sur le serveur. Plus besoin de déployer à la main — c'est fiable, reproductible, et rapide.</p>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3 style="margin-top: 2rem;">L'analogie pour comprendre</h3>
+    <div class="callout">
+      <div class="callout-title">Analogie</div>
+      Pense à une chaîne de montage automobile. Chaque voiture passe par des contrôles qualité automatiques avant de quitter l'usine. Si un défaut est détecté, la chaîne s'arrête et alerte un technicien. Personne ne laisse partir une voiture défectueuse. Ton code, c'est pareil.
+    </div>
+  </div>
+
+  <div class="table-wrap fade-in">
+    <table>
+      <thead>
+        <tr>
+          <th>Sans CI/CD</th>
+          <th>Avec CI/CD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tests manuels</td>
+          <td><span class="badge badge-green">Tests automatiques</span></td>
+        </tr>
+        <tr>
+          <td>Déploiement à la main</td>
+          <td><span class="badge badge-green">Déploiement automatique</span></td>
+        </tr>
+        <tr>
+          <td>Erreurs découvertes tard</td>
+          <td><span class="badge badge-green">Erreurs détectées immédiatement</span></td>
+        </tr>
+        <tr>
+          <td>Processus différent à chaque fois</td>
+          <td><span class="badge badge-green">Processus identique et fiable</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="transition-box fade-in">
+    → OK mais concrètement, un pipeline c'est quoi ? Section suivante.
+  </div>
+</section>
+
+<!-- SECTION 2 — PIPELINE -->
+<section id="pipeline">
+  <div class="section-label">Section 02</div>
+  <h2>Les notions clés<br>d'un pipeline</h2>
+  <p class="section-intro">"Un pipeline c'est une chaîne d'étapes. Voici les pièces qui la composent."</p>
+
+  <div class="grid fade-in">
+    <div class="card">
+      <div class="card-icon">pipeline</div>
+      <h3>Pipeline</h3>
+      <p style="color: var(--muted); font-size: 14px;">L'ensemble du processus automatisé — du git push jusqu'au déploiement final. La "chaîne" complète contenant plusieurs étapes dans un ordre précis.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">stage</div>
+      <h3>Stage (étape)</h3>
+      <p style="color: var(--muted); font-size: 14px;">Un pipeline est découpé en grandes phases : Build, Test, Deploy. Chaque stage ne démarre que si le précédent a réussi.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">runner</div>
+      <h3>Runner</h3>
+      <p style="color: var(--muted); font-size: 14px;">La machine virtuelle qui exécute ton pipeline. GitHub met à disposition ses propres runners — tu n'as rien à installer.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">artifact</div>
+      <h3>Artifact</h3>
+      <p style="color: var(--muted); font-size: 14px;">Un fichier produit par le pipeline et conservé pour être réutilisé dans une étape suivante. Ex : résultat d'une compilation.</p>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3 style="margin-top: 2rem;">Les triggers (déclencheurs)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Trigger</th><th>Quand ?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">push</span></td><td>À chaque envoi de code</td></tr>
+          <tr><td><span class="badge badge-blue">pull_request</span></td><td>Quand une PR est ouverte</td></tr>
+          <tr><td><span class="badge badge-blue">schedule</span></td><td>À heure fixe (comme un cron)</td></tr>
+          <tr><td><span class="badge badge-blue">workflow_dispatch</span></td><td>Manuellement, à la demande</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>Pipeline séquentiel vs parallèle</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 0.5rem;">SÉQUENTIEL</div>
+        <div class="pipeline" style="flex-direction: column; gap: 0.5rem;">
+          <div class="pipe-step success"><div class="pipe-icon" style="color: var(--green);">■</div><div class="pipe-label">Build</div></div>
+          <div style="text-align:center; color: var(--muted); font-family: monospace;">↓</div>
+          <div class="pipe-step success"><div class="pipe-icon" style="color: var(--green);">■</div><div class="pipe-label">Test</div></div>
+          <div style="text-align:center; color: var(--muted); font-family: monospace;">↓</div>
+          <div class="pipe-step success"><div class="pipe-icon" style="color: var(--green);">■</div><div class="pipe-label">Deploy</div></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 0.5rem;">PARALLÈLE</div>
+        <div class="pipeline" style="flex-direction: column; gap: 0.5rem;">
+          <div class="pipe-step success"><div class="pipe-icon" style="color: var(--green);">■</div><div class="pipe-label">Build</div></div>
+          <div style="text-align:center; color: var(--muted); font-family: monospace;">↓</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <div class="pipe-step success" style="flex:1"><div class="pipe-icon" style="color: var(--green); font-size:14px;">■</div><div class="pipe-label">Test A</div></div>
+            <div class="pipe-step success" style="flex:1"><div class="pipe-icon" style="color: var(--green); font-size:14px;">■</div><div class="pipe-label">Test B</div></div>
+          </div>
+          <div style="text-align:center; color: var(--muted); font-family: monospace;">↓</div>
+          <div class="pipe-step success"><div class="pipe-icon" style="color: var(--green);">■</div><div class="pipe-label">Deploy</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>Statuts possibles</h3>
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0;">
+      <div class="status-row"><div class="status-dot" style="background: var(--green);"></div><span style="color: var(--green); font-family: monospace;">Success</span><span style="color: var(--muted); margin-left: auto;">Tout s'est bien passé</span></div>
+      <div class="status-row"><div class="status-dot" style="background: var(--red);"></div><span style="color: var(--red); font-family: monospace;">Failure</span><span style="color: var(--muted); margin-left: auto;">Une étape a échoué</span></div>
+      <div class="status-row"><div class="status-dot" style="background: var(--yellow);"></div><span style="color: var(--yellow); font-family: monospace;">Pending</span><span style="color: var(--muted); margin-left: auto;">En attente d'exécution</span></div>
+      <div class="status-row"><div class="status-dot" style="background: var(--muted);"></div><span style="color: var(--muted); font-family: monospace;">Cancelled</span><span style="color: var(--muted); margin-left: auto;">Annulé manuellement</span></div>
+    </div>
+  </div>
+
+  <div class="transition-box fade-in">
+    → Maintenant qu'on sait ce qu'est un pipeline, quel outil on va utiliser pour en créer un ?
+  </div>
+</section>
+
+<!-- SECTION 3 — GITHUB ACTIONS -->
+<section id="actions">
+  <div class="section-label">Section 03</div>
+  <h2>GitHub Actions,<br>l'outil qui fait tout ça</h2>
+  <p class="section-intro">"GitHub Actions c'est exactement ce qu'on vient de décrire, intégré directement dans ton repo."</p>
+
+  <div class="fade-in">
+    <p>GitHub Actions c'est l'outil de CI/CD intégré directement dans GitHub. Pas besoin d'un service externe, pas besoin de configurer un serveur séparé — tout se passe dans ton repo, dans un fichier YAML que tu crées toi-même.</p>
+    <p>C'est gratuit pour les repos publics, et largement suffisant pour des projets perso ou d'école.</p>
+  </div>
+
+  <div class="fade-in">
+    <h3>Les 4 concepts clés</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">workflow</div>
+        <h3>Workflow</h3>
+        <p style="color: var(--muted); font-size: 14px;">Le fichier YAML entier. C'est ton pipeline complet, stocké dans <code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">.github/workflows/</code></p>
+      </div>
+      <div class="card">
+        <div class="card-icon">event</div>
+        <h3>Event</h3>
+        <p style="color: var(--muted); font-size: 14px;">Ce qui déclenche le pipeline. push, pull_request, schedule... C'est le trigger qu'on a vu à la section précédente.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">job</div>
+        <h3>Job</h3>
+        <p style="color: var(--muted); font-size: 14px;">Un groupe de tâches qui s'exécutent sur une même machine virtuelle (runner).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">step</div>
+        <h3>Step</h3>
+        <p style="color: var(--muted); font-size: 14px;">Une action précise à l'intérieur d'un job — installer les dépendances, lancer les tests, déployer...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>Schéma d'un workflow</h3>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span class="terminal-title">workflow structure</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">git push</span></div>
+        <div>&nbsp;&nbsp;<span class="t-comment">↓ Event déclenché</span></div>
+        <div><span class="t-key">Workflow</span></div>
+        <div>&nbsp;&nbsp;<span class="t-comment">↓</span></div>
+        <div>&nbsp;&nbsp;<span class="t-key">Job 1</span> <span class="t-comment">: Tests (ubuntu-latest)</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-str">Step 1</span> <span class="t-comment">: Installer les dépendances</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-str">Step 2</span> <span class="t-comment">: Lancer les tests</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-str">Step 3</span> <span class="t-comment">: Rapport de résultats</span></div>
+        <div>&nbsp;&nbsp;<span class="t-comment">↓ (si tests OK)</span></div>
+        <div>&nbsp;&nbsp;<span class="t-key">Job 2</span> <span class="t-comment">: Déploiement</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-str">Step 1</span> <span class="t-comment">: Connexion au serveur</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-str">Step 2</span> <span class="t-comment">: Mise en ligne du code</span></div>
+        <div><span class="t-success">✓ Done in 43s</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>GitHub Actions vs les autres</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>GitHub Actions</th><th>Jenkins</th><th>CircleCI</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Intégration GitHub</td><td><span class="badge badge-green">Native</span></td><td>Manuelle</td><td>Bonne</td></tr>
+          <tr><td>Gratuit</td><td><span class="badge badge-green">Oui</span></td><td>Self-hosted</td><td>Limité</td></tr>
+          <tr><td>Complexité setup</td><td><span class="badge badge-green">Faible</span></td><td><span class="badge badge-red">Élevée</span></td><td>Moyenne</td></tr>
+          <tr><td>Idéal pour</td><td>Projets GitHub</td><td>Grandes équipes</td><td>Startups</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="transition-box fade-in">
+    → Mais comment on lui parle à cet outil ? Via un fichier YAML.
+  </div>
+</section>
+
+<!-- SECTION 4 — YAML -->
+<section id="yaml">
+  <div class="section-label">Section 04</div>
+  <h2>Anatomie d'un<br>fichier YAML</h2>
+  <p class="section-intro">"GitHub Actions se configure avec un seul fichier. Voici comment le lire et l'écrire."</p>
+
+  <div class="fade-in">
+    <p>YAML c'est un langage de configuration — pas un langage de programmation. Tu ne codes pas, tu décris. Tu dis à GitHub Actions quoi faire, quand le faire, et dans quel ordre.</p>
+    <div class="callout">
+      <div class="callout-title">Règle absolue</div>
+      L'indentation c'est tout. Une mauvaise indentation = pipeline cassé. On utilise des espaces, jamais des tabulations.
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>La structure de base annotée</h3>
+    <div class="yaml-block">
+      <div class="yaml-header">
+        <span style="color: var(--green);">■</span>
+        .github/workflows/mon-pipeline.yml
+      </div>
+      <div class="yaml-body">
+        <div><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Mon premier pipeline</span> &nbsp;<span class="t-comment"># Nom visible sur GitHub</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-key">on</span><span class="t-cmd">:</span> &nbsp;<span class="t-comment"># Trigger — quand se déclenche-t-il ?</span></div>
+        <div>&nbsp;&nbsp;<span class="t-key">push</span><span class="t-cmd">:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">branches</span><span class="t-cmd">:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-str">main</span> &nbsp;<span class="t-comment"># Uniquement sur la branche main</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-key">jobs</span><span class="t-cmd">:</span> &nbsp;<span class="t-comment"># Les tâches à exécuter</span></div>
+        <div>&nbsp;&nbsp;<span class="t-key">mon-job</span><span class="t-cmd">:</span> &nbsp;<span class="t-comment"># Nom du job</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">runs-on</span><span class="t-cmd">:</span> <span class="t-str">ubuntu-latest</span> &nbsp;<span class="t-comment"># Machine virtuelle</span></div>
+        <div>&nbsp;</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">steps</span><span class="t-cmd">:</span> &nbsp;<span class="t-comment"># Les étapes du job</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Récupérer le code</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">uses</span><span class="t-cmd">:</span> <span class="t-str">actions/checkout@v3</span> &nbsp;<span class="t-comment"># Action officielle</span></div>
+        <div>&nbsp;</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Dire bonjour</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">run</span><span class="t-cmd">:</span> <span class="t-val">echo "Pipeline lancé !"</span> &nbsp;<span class="t-comment"># Commande shell</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>uses vs run — la différence</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>run</th><th>uses</th></tr></thead>
+        <tbody>
+          <tr><td>C'est quoi</td><td>Une commande shell</td><td>Une action préfabriquée</td></tr>
+          <tr><td>Exemple</td><td><code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">run: npm test</code></td><td><code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">uses: actions/checkout@v3</code></td></tr>
+          <tr><td>Quand l'utiliser</td><td>Commandes simples</td><td>Tâches complexes réutilisables</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout fade-in">
+    <div class="callout-title">Variables sensibles</div>
+    Ne jamais écrire un mot de passe ou une clé API dans le fichier YAML. Utilise les Secrets GitHub (Settings → Secrets → Actions) et réfère-y avec <code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${{ secrets.MA_CLE }}</code>
+  </div>
+
+  <div class="transition-box fade-in">
+    → Tu connais maintenant les pièces du puzzle. On assemble tout ça.
+  </div>
+</section>
+
+<!-- SECTION 5 — PREMIER PIPELINE -->
+<section id="premier">
+  <div class="section-label">Section 05</div>
+  <h2>Ton premier pipeline<br>pas à pas</h2>
+  <p class="section-intro">"On prend tout ce qu'on vient d'apprendre et on crée un vrai pipeline, de zéro."</p>
+
+  <div class="fade-in">
+    <h3>Ce qu'on va construire</h3>
+    <p>Un pipeline simple mais complet qui fait 2 choses à chaque git push sur la branche main : vérifie que le code ne contient pas d'erreurs, et affiche un message de confirmation si tout est OK.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step fade-in">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Préparer ton repo</h3>
+        <p style="color: var(--muted); font-size: 14px;">Dans ton repo GitHub, crée cette structure de dossiers :</p>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+            <span class="terminal-title">structure du projet</span>
+          </div>
+          <div class="terminal-body">
+            <div><span class="t-cmd">ton-repo/</span></div>
+            <div><span class="t-cmd">└── .github/</span></div>
+            <div><span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;└── workflows/</span></div>
+            <div><span class="t-green t-success">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── premier-pipeline.yml</span></div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top: 1rem;">
+          <div class="callout-title">Pourquoi ce dossier ?</div>
+          Le dossier .github/workflows/ c'est l'endroit que GitHub surveille automatiquement. Tout fichier .yml dedans sera interprété comme un workflow.
+        </div>
+      </div>
+    </div>
+
+    <div class="step fade-in">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Écrire le fichier YAML</h3>
+        <p style="color: var(--muted); font-size: 14px;">Copie ce fichier dans <code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">premier-pipeline.yml</code> :</p>
+        <div class="yaml-block">
+          <div class="yaml-header">
+            <span style="color: var(--green);">■</span>
+            premier-pipeline.yml
+          </div>
+          <div class="yaml-body">
+            <div><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Mon Premier Pipeline CI</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-key">on</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">push</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">branches</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-str">main</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-key">jobs</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">verification</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">runs-on</span><span class="t-cmd">:</span> <span class="t-str">ubuntu-latest</span></div>
+            <div>&nbsp;</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">steps</span><span class="t-cmd">:</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Récupérer le code</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">uses</span><span class="t-cmd">:</span> <span class="t-str">actions/checkout@v3</span></div>
+            <div>&nbsp;</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Afficher la structure du projet</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">run</span><span class="t-cmd">:</span> <span class="t-val">ls -la</span></div>
+            <div>&nbsp;</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Pipeline réussi</span></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-key">run</span><span class="t-cmd">:</span> <span class="t-val">echo "Tout s'est bien passé !"</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step fade-in">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Pousser le code</h3>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+            <span class="terminal-title">bash</span>
+          </div>
+          <div class="terminal-body">
+            <div><span class="t-prompt">$</span> <span class="t-cmd">git add .</span></div>
+            <div><span class="t-prompt">$</span> <span class="t-cmd">git commit -m <span class="t-str">"feat: ajout du premier pipeline CI"</span></span></div>
+            <div><span class="t-prompt">$</span> <span class="t-cmd">git push origin main</span></div>
+            <div><span class="t-success">✓ Enumerating objects: 5, done.</span></div>
+            <div><span class="t-success">✓ Writing objects: 100% (3/3), done.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step fade-in">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Observer le résultat sur GitHub</h3>
+        <p style="color: var(--muted); font-size: 14px; margin-bottom: 1rem;">Va sur ton repo → onglet <strong>Actions</strong> → tu vois ton workflow tourner en temps réel.</p>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <div class="status-row"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px;">Mon Premier Pipeline CI</span></div>
+          <div class="status-row" style="padding-left: 1.5rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">verification</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">Récupérer le code</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">Afficher la structure du projet</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">Pipeline réussi</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step fade-in">
+      <div class="step-num">05</div>
+      <div class="step-content">
+        <h3>Provoquer une erreur volontairement</h3>
+        <p style="color: var(--muted); font-size: 14px;">Pour comprendre comment le pipeline réagit, remplace l'étape finale par :</p>
+        <div class="yaml-block">
+          <div class="yaml-header"><span style="color: var(--red);">■</span> version erreur</div>
+          <div class="yaml-body">
+            <div><span class="t-cmd">- </span><span class="t-key">name</span><span class="t-cmd">:</span> <span class="t-str">Simuler une erreur</span></div>
+            <div>&nbsp;&nbsp;<span class="t-key">run</span><span class="t-cmd">:</span> <span class="t-error">exit 1</span> &nbsp;<span class="t-comment"># Force l'échec</span></div>
+          </div>
+        </div>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 1rem;">Résultat sur GitHub :</p>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem;">
+          <div class="status-row"><div class="status-dot" style="background: var(--red);"></div><span style="font-family: monospace; font-size: 13px; color: var(--red);">Mon Premier Pipeline CI</span></div>
+          <div class="status-row" style="padding-left: 1.5rem;"><div class="status-dot" style="background: var(--red);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">verification</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">Récupérer le code</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--green);"></div><span style="font-family: monospace; font-size: 13px; color: var(--muted);">Afficher la structure du projet</span></div>
+          <div class="status-row" style="padding-left: 3rem;"><div class="status-dot" style="background: var(--red);"></div><span style="font-family: monospace; font-size: 13px; color: var(--red);">Simuler une erreur</span></div>
+        </div>
+        <div class="callout" style="margin-top: 1rem;">
+          <div class="callout-title">En entreprise</div>
+          GitHub t'envoie un email d'alerte automatiquement quand un pipeline échoue. C'est exactement ce qui se passe quand un dev pousse du code cassé.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-in">
+    <h3>Récap — tout ce qu'on vient d'utiliser</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Notion vue</th><th>Ce qu'on a fait concrètement</th></tr></thead>
+        <tbody>
+          <tr><td>Trigger</td><td><code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">on: push</code> sur main</td></tr>
+          <tr><td>Runner</td><td><code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">ubuntu-latest</code></td></tr>
+          <tr><td>Job</td><td><code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">verification</code></td></tr>
+          <tr><td>Steps</td><td>checkout, ls, echo</td></tr>
+          <tr><td>Statuts</td><td><span class="badge badge-green">Success</span> et <span class="badge badge-red">Failure</span> sur GitHub</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="transition-box fade-in" style="background: var(--green-dim); border-color: var(--green);">
+    ✓ Ton pipeline tourne. Tu maîtrises maintenant les bases de GitHub Actions & CI/CD.
+  </div>
+</section>
+
+<footer>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">
+    GitHub Actions & CI/CD — Tutoriel Learning Lab · B2 Web & Multimédia
+  </div>
+  <div style="margin-top: 0.5rem; color: var(--border);">
+    Sources : docs.github.com/actions · skills.github.com · atlassian.com/continuous-delivery
+  </div>
+</footer>
+
+<script>
+  const progress = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    progress.style.width = pct + '%';
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
